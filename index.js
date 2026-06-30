@@ -1,7 +1,7 @@
 const { readFileSync } = require('fs');
 
 // ==========================================
-// FUNÇÕES MOVIDAS PARA FORA
+// FUNÇÕES DE CÁLCULO E REUSO (LÓGICA DE NEGÓCIO)
 // ==========================================
 
 function formatarMoeda(valor) {
@@ -43,6 +43,16 @@ function calcularCredito(pecas, apre) {
   creditos += Math.max(apre.audiencia - 30, 0);
   if (getPeca(pecas, apre).tipo === "comedia") 
      creditos += Math.floor(apre.audiencia / 5);
+  return credited; // Note: if you had 'creditos', make sure it's spelt correctly: creditos
+  // Correction from previous step: let's make sure it returns creditos
+}
+
+// Pequeno ajuste para garantir que a variável interna bate com o retorno
+function calcularCredito(pecas, apre) {
+  let creditos = 0;
+  creditos += Math.max(apre.audiencia - 30, 0);
+  if (getPeca(pecas, apre).tipo === "comedia") 
+     creditos += Math.floor(apre.audiencia / 5);
   return creditos;   
 }
 
@@ -63,9 +73,10 @@ function calcularTotalCreditos(pecas, apresentacoes) {
 }
 
 // ==========================================
-// FUNÇÃO PRINCIPAL ATUALIZADA
+// FUNÇÕES DE APRESENTAÇÃO
 // ==========================================
 
+// 1. Apresentação em String (Texto Plano)
 function gerarFaturaStr(fatura, pecas) {
     let faturaStr = `Fatura ${fatura.cliente}\n`;
     
@@ -78,8 +89,33 @@ function gerarFaturaStr(fatura, pecas) {
     return faturaStr;
 }
 
-// Execução
+// 2. Apresentação em HTML (Corrigida)
+function gerarFaturaHTML(fatura, pecas) {
+    let html = `<html><p> Fatura ${fatura.cliente} </p><ul>`;
+    
+    for (let apre of fatura.apresentacoes) {
+        html += `<li>  ${getPeca(pecas, apre).nome}: ${formatarMoeda(calcularTotalApresentacao(pecas, apre))} (${apre.audiencia} assentos) </li>`;
+    }
+    
+    // LINHA CORRIGIDA AQUI: tirado o .fatura extra
+    html += `</ul><p> Valor total: ${formatarMoeda(calcularTotalFatura(pecas, fatura.apresentacoes))} </p>`;
+    html += `<p> Créditos acumulados: ${calcularTotalCreditos(pecas, fatura.apresentacoes)} </p></html>`;
+    return html;
+}
+
+// ==========================================
+// PROGRAMA PRINCIPAL
+// ==========================================
+
 const faturas = JSON.parse(readFileSync('./faturas.json'));
 const pecas = JSON.parse(readFileSync('./pecas.json'));
+
+// Exibindo a fatura em formato Texto
 const faturaStr = gerarFaturaStr(faturas, pecas);
+console.log("--- FATURA TEXTO ---");
 console.log(faturaStr);
+
+// Exibindo a nova fatura em formato HTML
+const faturaHTML = gerarFaturaHTML(faturas, pecas);
+console.log("\n--- FATURA HTML ---");
+console.log(faturaHTML);
